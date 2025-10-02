@@ -1,4 +1,4 @@
-import { type BackupJob, config } from "../config"
+import { type BackupJob, config } from "../config";
 import { execSync } from "child_process";
 import { parseAndNotify } from "./notifier";
 
@@ -9,13 +9,13 @@ export async function backupFileToSecondLocation(
   job: BackupJob,
   filePath: string,
 ) {
-  console.log('Backing up rclone target:', job.target);
+  console.log("Backing up rclone target:", job.target);
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth() + 1;
   const d = now.getDate();
 
-  const secondLocation = (await config()).second_location;
+  const secondLocation = config().second_location;
   const target = secondLocation.target;
 
   // create target directory
@@ -23,7 +23,7 @@ export async function backupFileToSecondLocation(
   const mkdirCmd = `rclone mkdir ${target}/${rcloneDir}`;
 
   // copy source file to target directory (keep source filename)
-  const targetFilename = filePath.split('/').reverse()[0];
+  const targetFilename = filePath.split("/").reverse()[0];
   const copyCmd = `rclone copy ${filePath} ${target}/${rcloneDir}/`;
 
   try {
@@ -33,13 +33,19 @@ export async function backupFileToSecondLocation(
     });
 
     // call it. call it NOW!
-    console.log('saving on second location:', copyCmd);
+    console.log("saving on second location:", copyCmd);
     execSync(copyCmd, {
       timeout: tenMinutes,
     });
-  } catch(e: any) {
-    // parse and report error
+  } catch (e: any) {
+    // send error notification
     console.error(e);
-    await parseAndNotify(job, e);
+    if (job.ntfy_topic) {
+      await parseAndNotify(job, job.ntfy_topic, e);
+    } else {
+      console.warn(
+        "Not sending notification due to missing option `ntfy_topic` in niko backup config",
+      );
+    }
   }
 }
