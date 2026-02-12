@@ -1,4 +1,5 @@
 import { envConfig, type BackupJob } from "../config";
+import { prettyByteSize } from "../helpers";
 
 async function _sendNotification(
   topic: string,
@@ -88,27 +89,31 @@ export async function sendBackupErrNoti(
   jobName: string,
   errMsg: string,
 ) {
-  const { nfty_base_url, nfty_token } = envConfig();
+  const { ntfy_base_url, ntfy_token } = envConfig();
   return _sendNotification(
     channel,
-    nfty_token,
+    ntfy_token,
     `'${jobName}' bckp err`,
     errMsg,
     4,
-    nfty_base_url,
+    ntfy_base_url,
   );
 }
 
 // TODO: add backup stats to notification
-export async function sendSuccessNoti(channel: string, jobName: string) {
-  const { nfty_base_url, nfty_token } = envConfig();
+export async function sendSuccessNoti(
+  channel: string,
+  jobName: string,
+  size: number,
+) {
+  const { ntfy_base_url, ntfy_token } = envConfig();
   return _sendNotification(
     channel,
-    nfty_token,
-    `'${jobName}' success`,
+    ntfy_token,
+    `'${jobName}' ok: ${prettyByteSize(size)}`,
     "",
     3,
-    nfty_base_url,
+    ntfy_base_url,
   );
 }
 

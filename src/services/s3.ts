@@ -4,6 +4,7 @@ import { execSync, spawnSync } from "child_process";
 import { resetBackupTimer } from "./state";
 import { sendSuccessNoti } from "./notifier";
 import { backupFileToSecondLocation } from "./rclone";
+import * as fs from "node:fs";
 
 export async function backupS3(job: BackupJob, stateFilePath: string) {
   const newerThan = job.s3_newer_than;
@@ -30,7 +31,7 @@ export async function backupS3(job: BackupJob, stateFilePath: string) {
     throw anyFiles.error;
   } else {
     const filesToDownload = anyFiles.stdout.trim();
-    const filesCount = filesToDownload.split("\n").length - 1;
+    const filesCount = filesToDownload.split("\n").length;
     if (filesCount === 0) {
       console.warn("There are no files to download");
       await resetBackupTimer(job, stateFilePath);
@@ -64,10 +65,12 @@ export async function backupS3(job: BackupJob, stateFilePath: string) {
     await backupFileToSecondLocation(job, resultPath);
   }
 
+  // fetch meta file to recieve size
+  const stats = await fs.promises.stat(resultPath);
+
   // send success notification
-  // TODO: add stats
   if (job.ntfy_topic) {
-    await sendSuccessNoti(job.ntfy_topic, job.name);
+    await sendSuccessNoti(job.ntfy_topic, job.name, stats.size);
   } else {
     console.warn(
       "Not sending notification due to missing option `ntfy_topic` in niko backup config",

@@ -32,8 +32,8 @@ const backupSchema = yup.object({
 });
 
 const envConfigSchema = yup.object({
-  nfty_token: yup.string().optional(),
-  nfty_base_url: yup.string().optional(),
+  ntfy_token: yup.string().optional(),
+  ntfy_base_url: yup.string().optional(),
 });
 
 const configSchema = yup
@@ -92,8 +92,9 @@ export function config(): BackupConfig {
 
 export function envConfig(): EnvConfig {
   const parsedEnvConfig = envConfigSchema.validateSync({
-    nfty_token: process.env.NFTY_TOKEN,
-    nfty_base_url: process.env.NFTY_BASE_URL,
+    ntfy_token: process.env.NTFY_TOKEN,
+    ntfy_base_url: process.env.NTFY_BASE_URL,
   });
+  console.log("found these ntfy tokens/urls", parsedEnvConfig);
   return parsedEnvConfig;
 }

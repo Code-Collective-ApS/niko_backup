@@ -4,6 +4,7 @@ import { parseAndNotify, sendSuccessNoti } from "./notifier";
 import { backupFileToSecondLocation } from "./rclone";
 import { resetBackupTimer } from "./state";
 import { execSync } from "child_process";
+import * as fs from "node:fs";
 
 const tenMinutes = 10 * 60 * 1000;
 
@@ -44,9 +45,12 @@ export async function backupPostgres(job: BackupJob, stateFilePath: string) {
       await backupFileToSecondLocation(job, resultPath);
     }
 
+    // fetch meta file to recieve size
+    const stats = await fs.promises.stat(resultPath);
+
     // send success notification
     if (job.ntfy_topic) {
-      await sendSuccessNoti(job.ntfy_topic, job.name);
+      await sendSuccessNoti(job.ntfy_topic, job.name, stats.size);
     } else {
       console.warn(
         "Not sending notification due to missing option `ntfy_topic` in niko backup config",
