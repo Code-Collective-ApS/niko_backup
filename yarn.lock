@@ -2,6 +2,20 @@
 # yarn lockfile v1
 
 
+"@noble/hashes@^1.8.0":
+  version "1.8.0"
+  resolved "https://registry.npmjs.org/@noble/hashes/-/hashes-1.8.0.tgz"
+  integrity sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==
+
+"@protontech/drive-sdk@^0.9.6":
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/@protontech/drive-sdk/-/drive-sdk-0.9.6.tgz#0d2e7e943d38a010a3fd2a8004f16744913b7658"
+  integrity sha512-k4PlkPvclCEG9c488blxD7kL9juQQcdzNu6gcPv+6ID9lstmjB1F5YaGr+HKMbKlUovnYvlY9AD9zB6ycGMgxA==
+  dependencies:
+    "@noble/hashes" "^1.8.0"
+    bcryptjs "^2.4.3"
+    ttag "^1.8.7"
+
 "@types/node@^22.10.2":
   version "22.15.17"
   resolved "https://registry.npmjs.org/@types/node/-/node-22.15.17.tgz"
@@ -9,10 +23,25 @@
   dependencies:
     undici-types "~6.21.0"
 
+bcryptjs@^2.4.3:
+  version "2.4.3"
+  resolved "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz"
+  integrity sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==
+
+dedent@1.5.1:
+  version "1.5.1"
+  resolved "https://registry.npmjs.org/dedent/-/dedent-1.5.1.tgz"
+  integrity sha512-+LxW+KLWxu3HW3M2w2ympwtqPrqYRzU8fqi6Fhd18fBALe15blJPI/I4+UHveMVG6lJqB4JNd4UG0S5cnVHwIg==
+
 dotenv@^16.5.0:
   version "16.5.0"
   resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.5.0.tgz"
   integrity sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==
+
+plural-forms@^0.5.3:
+  version "0.5.5"
+  resolved "https://registry.npmjs.org/plural-forms/-/plural-forms-0.5.5.tgz"
+  integrity sha512-rJw4xp22izsfJOVqta5Hyvep2lR3xPkFUtj7dyQtpf/FbxUiX7PQCajTn2EHDRylizH5N/Uqqodfdu22I0ju+g==
 
 property-expr@^2.0.5:
   version "2.0.6"
@@ -28,6 +57,14 @@ toposort@^2.0.2:
   version "2.0.2"
   resolved "https://registry.npmjs.org/toposort/-/toposort-2.0.2.tgz"
   integrity sha512-0a5EOkAUp8D4moMi2W8ZF8jcga7BgZd91O/yabJCFY8az+XSzeGyTKs0Aoo897iV1Nj6guFq8orWDS96z91oGg==
+
+ttag@^1.8.7:
+  version "1.8.12"
+  resolved "https://registry.npmjs.org/ttag/-/ttag-1.8.12.tgz"
+  integrity sha512-bg8IqDOY1MtJrWmBiY+Frl8T5dhDJ00du4jIaDh/Uwbo+UPyNPvBJcgfin/W+yTMEKLEs4Pve8YaygzJCMuvOg==
+  dependencies:
+    dedent "1.5.1"
+    plural-forms "^0.5.3"
 
 type-fest@^2.19.0:
   version "2.19.0"

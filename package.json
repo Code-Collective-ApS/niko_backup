@@ -17,6 +17,7 @@
     "yup": "^1.6.1"
   },
   "dependencies": {
+    "@protontech/drive-sdk": "^0.9.6",
     "dotenv": "^16.5.0"
   }
 }
