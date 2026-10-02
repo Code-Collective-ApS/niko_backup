@@ -10,4 +10,6 @@ export interface JobResult {
   durationMs?: number;
   /** error message for failed jobs */
   error?: string;
+  /** optional note shown next to the type in the run summary, e.g. "no files" */
+  note?: string;
 }

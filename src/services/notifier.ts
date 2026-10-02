@@ -144,7 +144,7 @@ export function buildRunSummaryBody(summary: RunSummary): string {
   for (const row of summary.rows) {
     const type =
       row.status === "success"
-        ? tableCell(row.type)
+        ? tableCell(row.type + (row.note ? ` (${row.note})` : ""))
         : row.status === "skipped"
           ? "skipped"
           : `FAILED - ${tableCell(scrubSecrets(firstLine(row.error)))}`;

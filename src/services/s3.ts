@@ -36,21 +36,29 @@ export async function backupS3(
     const anyFiles = spawnSync(checkCmd, { shell: true, encoding: "utf8" });
     if (anyFiles.error) {
       throw anyFiles.error;
-    } else {
-      const filesToDownload = anyFiles.stdout.trim();
-      const filesCount = filesToDownload.split("\n").length;
-      if (filesCount === 0) {
-        console.warn("There are no files to download");
-        await resetBackupTimer(job, stateFilePath);
-        return {
-          name: job.name,
-          type: "s3",
-          status: "success",
-          durationMs: Date.now() - startedAt,
-        };
-      }
-      console.log(`Downloading ${filesCount} files from s3..`);
     }
+    if (anyFiles.status !== 0) {
+      throw new Error(
+        `mc find failed with exit code ${anyFiles.status}: ${anyFiles.stderr?.trim() || "no stderr"}`,
+      );
+    }
+
+    // note: "".split("\n") has length 1, so empty output must be checked
+    // before counting lines
+    const filesToDownload = anyFiles.stdout.trim();
+    if (!filesToDownload) {
+      console.warn("There are no files to download");
+      await resetBackupTimer(job, stateFilePath);
+      return {
+        name: job.name,
+        type: "s3",
+        status: "success",
+        durationMs: Date.now() - startedAt,
+        note: "no files",
+      };
+    }
+    const filesCount = filesToDownload.split("\n").length;
+    console.log(`Downloading ${filesCount} files from s3..`);
 
     const outputDir = config().output_dir;
     const time = getFileNameFriendlyDate(new Date());
@@ -66,7 +74,7 @@ export async function backupS3(
     // the encryption password is passed via environment variable so that it
     // does not show up in the process list
     const tarCmdEncrypt = `set -o pipefail; tar -cvf - ${tmpDir} | openssl enc -e -aes256 -pass env:NIKO_ENCRYPT_PASS -out ${resultPath}`;
-    const cleanupCmd = "rm -r tmp";
+    const cleanupCmd = "rm -rf tmp";
 
     try {
       execSync(mkdirTmpCmd, { stdio: "ignore" });
