@@ -79,12 +79,16 @@ async function run() {
     await reportError(e, { stage: "delete_old_files" });
   }
 
-  // send a single summary notification for the whole run
+  // send a single summary notification for the whole run, but stay silent
+  // when every job was skipped (nothing happened, no notification)
   const finishedAt = new Date();
-  if (cfg.ntfy_topic) {
+  const ranSomething = rows.some((r) => r.status !== "skipped");
+  if (cfg.ntfy_topic && ranSomething) {
     await sendRunSummary(cfg.ntfy_topic, { startedAt, finishedAt, rows });
-  } else {
+  } else if (ranSomething) {
     console.warn("Not sending run summary: no 'ntfy_topic' defined in config");
+  } else {
+    console.log("All backup jobs were skipped; not sending run summary");
   }
 }
 

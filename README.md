@@ -67,7 +67,7 @@ Per-job options:
 
 - A failed backup job is retried on the next run: the state file is only updated on success.
 - If any job fails, the process exits with a non-zero exit code, so a systemd unit will show as failed.
-- Errors are reported to the `SENTRY_DSN` endpoint. ntfy receives a single summary notification per run (a markdown table with each job's result, size, execution time and next run), sent to the top-level `ntfy_topic`.
+- Errors are reported to the `SENTRY_DSN` endpoint. ntfy receives a single summary notification per run (a markdown table with each job's result, size, execution time and next run), sent to the top-level `ntfy_topic`. If every job was skipped, no notification is sent.
 
 ### Decrypt openssl password encryption:
 
