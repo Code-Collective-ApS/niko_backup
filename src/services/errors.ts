@@ -30,7 +30,7 @@ function dsn(): Dsn | null {
   return cachedDsn ?? null;
 }
 
-function scrubSecrets(text: string): string {
+export function scrubSecrets(text: string): string {
   // postgres connection URIs contain passwords: keep them out of error reports
   return text.replace(/(postgres(?:ql)?:\/\/)[^\s@/]+@/g, "$1***@");
 }

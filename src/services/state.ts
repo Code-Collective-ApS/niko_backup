@@ -42,6 +42,20 @@ export async function isTimeForBackup(path: string, job: BackupJob): Promise<boo
   }
 }
 
+/** When the job last ran successfully, or null if it never did. */
+export async function getLastSuccessDate(path: string, job: BackupJob): Promise<Date | null> {
+  await ensureStateFileExists(path);
+  const fileContent = await readFile(path, 'utf8');
+  const currentState = JSON.parse(fileContent);
+  const value = currentState[job.name];
+  if (!value) return null;
+  const date = new Date(value);
+  if (isNaN(date.getTime())) {
+    throw new Error('Could not read date from state. State is corrupted.');
+  }
+  return date;
+}
+
 async function createStateFile(path: string) {
   await writeFile(path, '{}');
 }

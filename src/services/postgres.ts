@@ -1,7 +1,7 @@
 import type { BackupJob } from "../config";
 import { config } from "../config";
 import { getFileNameFriendlyDate } from "../helpers";
-import { sendSuccessNoti } from "./notifier";
+import type { JobResult } from "../types";
 import { reportError } from "./errors";
 import { backupFileToSecondLocation } from "./rclone";
 import { resetBackupTimer } from "./state";
@@ -10,8 +10,12 @@ import * as fs from "node:fs";
 
 const tenMinutes = 10 * 60 * 1000;
 
-export async function backupPostgres(job: BackupJob, stateFilePath: string) {
+export async function backupPostgres(
+  job: BackupJob,
+  stateFilePath: string,
+): Promise<JobResult> {
   console.log("Backing up postgres:", job.target);
+  const startedAt = Date.now();
 
   if (job.encrypt && !job.encrypt_pass) {
     throw new Error(
@@ -56,21 +60,27 @@ export async function backupPostgres(job: BackupJob, stateFilePath: string) {
     // fetch meta file to recieve size
     const stats = await fs.promises.stat(resultPath);
 
-    // send success notification
-    if (job.ntfy_topic) {
-      await sendSuccessNoti(job.ntfy_topic, job.name, stats.size);
-    } else {
-      console.warn(
-        "Not sending notification due to missing option `ntfy_topic` in niko backup config",
-      );
-    }
-
     // only reset the backup timer on success, so that a failed backup is
     // retried on the next run
     await resetBackupTimer(job, stateFilePath);
+
+    return {
+      name: job.name,
+      type: "postgres",
+      status: "success",
+      sizeBytes: stats.size,
+      durationMs: Date.now() - startedAt,
+    };
   } catch (e: any) {
     // report the error via bugsink (which triggers ntfy on its end)
     process.exitCode = 1;
     await reportError(e, { job: job.name, backup_type: "postgres" });
+    return {
+      name: job.name,
+      type: "postgres",
+      status: "failed",
+      durationMs: Date.now() - startedAt,
+      error: e?.message,
+    };
   }
 }

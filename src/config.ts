@@ -28,7 +28,6 @@ const backupSchema = yup.object({
   disable_second_location: yup.boolean().optional(),
   s3_newer_than: yup.string().optional(),
   s3_download_limit: yup.string().optional(),
-  ntfy_topic: yup.string().optional(),
 });
 
 const envConfigSchema = yup.object({
@@ -40,6 +39,8 @@ const configSchema = yup
   .object({
     output_dir: yup.string().required(),
     state_file_path: yup.string().required(),
+    /** topic that receives the single per-run summary notification */
+    ntfy_topic: yup.string().optional(),
     second_location: yup
       .object({
         type: yup

@@ -1,6 +1,7 @@
 {
   "output_dir": "./output",
   "state_file_path": "./_state.json",
+  "ntfy_topic": "backups",
   "second_location": {
     "type": "rclone",
     "target": "proton_drive:Backup"
@@ -14,8 +15,7 @@
       "pg_dump": "/usr/lib/postgresql/16/bin/pg_dump",
       "psql": "/usr/lib/postgresql/16/bin/psql",
       "type": "postgres",
-      "target": "postgres://user:passwd@host:5432/joplin_database",
-      "ntfy_topic": "backups"
+      "target": "postgres://user:passwd@host:5432/joplin_database"
     },
     {
       "name": "customer_file_server",
@@ -25,8 +25,7 @@
       "type": "s3",
       "target": "my_minio_alias/my_bucket",
       "s3_newer_than": "168h",
-      "s3_download_limit": "500Mi",
-      "ntfy_topic": "backups"
+      "s3_download_limit": "500Mi"
     },
     {
       "name": "finance_database",
@@ -34,8 +33,7 @@
       "interval_days": 7,
       "max_backups": 4,
       "type": "postgres",
-      "target": "postgres://read_only_access:pwd@host:5432/finance_db",
-      "ntfy_topic": "backups"
+      "target": "postgres://read_only_access:pwd@host:5432/finance_db"
     }
   ]
 }

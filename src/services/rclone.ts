@@ -1,6 +1,5 @@
 import { type BackupJob, config } from "../config";
 import { execSync } from "child_process";
-import { reportError } from "./errors";
 
 const tenSeconds = 10000;
 const tenMinutes = 10 * 60 * 1000;
@@ -38,12 +37,9 @@ export async function backupFileToSecondLocation(
       timeout: tenMinutes,
     });
   } catch (e: any) {
-    // report the error and rethrow so the caller marks the job as failed
-    await reportError(e, {
-      job: job.name,
-      backup_type: job.type,
-      stage: "second_location",
-    });
+    // log locally and rethrow so the job marks itself as failed and reports
+    // the error once (avoid double-reporting to bugsink)
+    console.error("Backup to second location failed:", e);
     throw e;
   }
 }

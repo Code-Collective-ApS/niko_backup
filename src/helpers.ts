@@ -7,6 +7,21 @@ export function getFileNameFriendlyDate(d = new Date()) {
     .split(".")[0];
 }
 
+export function formatDateTime(d = new Date()): string {
+  // UTC, format: YYYY-MM-DD HH:mm:ss
+  return d.toISOString().slice(0, 19).replace("T", " ");
+}
+
+export function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) return `${minutes}m ${seconds}s`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m`;
+}
+
 export function extractDateFromFileName(filename: string): Date | null {
   const regex = /\d{4}-\d{2}-\d{2}T\d{2}_\d{2}_\d{2}/;
   const match = filename.match(regex);

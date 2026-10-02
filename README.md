@@ -43,6 +43,7 @@ See `config.example.json` for a full example. Top-level options:
 | ----------------- | ------------------------------------------------------------------------- |
 | `output_dir`      | Directory backup files are written to (also used for pruning old backups) |
 | `state_file_path` | JSON file that tracks when each job last ran successfully                 |
+| `ntfy_topic`     | Topic that receives the single per-run summary notification (optional)    |
 | `second_location` | `rclone` remote target backups are additionally copied to                 |
 
 Per-job options:
@@ -57,7 +58,6 @@ Per-job options:
 | `encrypt`                 | Encrypt the backup with `openssl` (aes256)                                     |
 | `encrypt_pass`            | Password used for encryption (required when `encrypt` is true)                 |
 | `pg_dump` / `psql`        | Optional paths to the binaries (default: from `PATH`)                          |
-| `ntfy_topic`              | ntfy topic for the success notification (optional)                             |
 | `disable_second_location` | Skip copying this backup to the second location (optional)                     |
 | `s3_newer_than`           | Only mirror files newer than this, e.g. `168h` (required for `s3`)             |
 | `s3_download_limit`       | Download limit passed to `mc mirror`, e.g. `500Mi` (required for `s3`)         |
@@ -67,7 +67,7 @@ Per-job options:
 
 - A failed backup job is retried on the next run: the state file is only updated on success.
 - If any job fails, the process exits with a non-zero exit code, so a systemd unit will show as failed.
-- Errors are reported to the `SENTRY_DSN` endpoint; ntfy only receives success notifications.
+- Errors are reported to the `SENTRY_DSN` endpoint. ntfy receives a single summary notification per run (a markdown table with each job's result, size, execution time and next run), sent to the top-level `ntfy_topic`.
 
 ### Decrypt openssl password encryption:
 
