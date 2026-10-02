@@ -1,6 +1,8 @@
 import type { BackupJob } from "../config";
+import { config } from "../config";
 import { getFileNameFriendlyDate } from "../helpers";
-import { parseAndNotify, sendSuccessNoti } from "./notifier";
+import { sendSuccessNoti } from "./notifier";
+import { reportError } from "./errors";
 import { backupFileToSecondLocation } from "./rclone";
 import { resetBackupTimer } from "./state";
 import { execSync } from "child_process";
@@ -17,14 +19,17 @@ export async function backupPostgres(job: BackupJob, stateFilePath: string) {
     );
   }
 
+  const outputDir = config().output_dir;
   const time = getFileNameFriendlyDate(new Date());
   const resultPath =
-    `output/${job.name}.${time}.gz` + (job.encrypt ? ".enc" : "");
-  const psqlCheckCmd = `PGCONNECT_TIMEOUT=3 psql ${job.target} -c 'SELECT 1'`;
-  const mkdirCmd = "mkdir -p output";
+    `${outputDir}/${job.name}.${time}.gz` + (job.encrypt ? ".enc" : "");
+  const psqlCheckCmd = `PGCONNECT_TIMEOUT=3 ${job.psql || "psql"} ${job.target} -c 'SELECT 1'`;
+  const mkdirCmd = `mkdir -p ${outputDir}`;
   const pgDumpCmd = `${job.pg_dump || "pg_dump"} -x -O ${job.target}`;
-  const dumpCmd = `${pgDumpCmd} --no-reconnect | gzip > ${resultPath}`;
-  const dumpEncryptCmd = `${pgDumpCmd} | gzip | openssl enc -e -aes256 -pass pass:${job.encrypt_pass} -out ${resultPath}`;
+  const dumpCmd = `set -o pipefail; ${pgDumpCmd} --no-reconnect | gzip > ${resultPath}`;
+  // the encryption password is passed via environment variable so that it
+  // does not show up in the process list
+  const dumpEncryptCmd = `set -o pipefail; ${pgDumpCmd} | gzip | openssl enc -e -aes256 -pass env:NIKO_ENCRYPT_PASS -out ${resultPath}`;
 
   try {
     // check if there is postgres connection, report err if not
@@ -36,8 +41,11 @@ export async function backupPostgres(job: BackupJob, stateFilePath: string) {
     execSync(mkdirCmd);
 
     // call it. call it NOW!
+    // pipefail requires bash (dash does not support it)
     execSync(job.encrypt ? dumpEncryptCmd : dumpCmd, {
       timeout: tenMinutes,
+      shell: "/bin/bash",
+      env: { ...process.env, NIKO_ENCRYPT_PASS: job.encrypt_pass || "" },
     });
 
     // backup postgres to second location if enabled
@@ -56,18 +64,13 @@ export async function backupPostgres(job: BackupJob, stateFilePath: string) {
         "Not sending notification due to missing option `ntfy_topic` in niko backup config",
       );
     }
-  } catch (e: any) {
-    // send error notification
-    console.error(e);
-    if (job.ntfy_topic) {
-      await parseAndNotify(job, job.ntfy_topic, e);
-    } else {
-      console.warn(
-        "Not sending notification due to missing option `ntfy_topic` in niko backup config",
-      );
-    }
-  }
 
-  // reset backup timer no matter if it went well or not
-  await resetBackupTimer(job, stateFilePath);
+    // only reset the backup timer on success, so that a failed backup is
+    // retried on the next run
+    await resetBackupTimer(job, stateFilePath);
+  } catch (e: any) {
+    // report the error via bugsink (which triggers ntfy on its end)
+    process.exitCode = 1;
+    await reportError(e, { job: job.name, backup_type: "postgres" });
+  }
 }

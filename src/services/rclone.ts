@@ -1,6 +1,6 @@
 import { type BackupJob, config } from "../config";
 import { execSync } from "child_process";
-import { parseAndNotify } from "./notifier";
+import { reportError } from "./errors";
 
 const tenSeconds = 10000;
 const tenMinutes = 10 * 60 * 1000;
@@ -38,14 +38,12 @@ export async function backupFileToSecondLocation(
       timeout: tenMinutes,
     });
   } catch (e: any) {
-    // send error notification
-    console.error(e);
-    if (job.ntfy_topic) {
-      await parseAndNotify(job, job.ntfy_topic, e);
-    } else {
-      console.warn(
-        "Not sending notification due to missing option `ntfy_topic` in niko backup config",
-      );
-    }
+    // report the error and rethrow so the caller marks the job as failed
+    await reportError(e, {
+      job: job.name,
+      backup_type: job.type,
+      stage: "second_location",
+    });
+    throw e;
   }
 }

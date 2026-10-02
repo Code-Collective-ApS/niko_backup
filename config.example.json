@@ -10,27 +10,32 @@
       "name": "joplin_weekly",
       "encrypt": true,
       "interval_days": 7,
-      "keep_in_days": 10,
+      "max_backups": 4,
       "pg_dump": "/usr/lib/postgresql/16/bin/pg_dump",
       "psql": "/usr/lib/postgresql/16/bin/psql",
       "type": "postgres",
-      "target": "postgres://user:passwd@host:5432/joplin_database"
+      "target": "postgres://user:passwd@host:5432/joplin_database",
+      "ntfy_topic": "backups"
     },
     {
       "name": "customer_file_server",
       "encrypt": true,
       "interval_days": 7,
-      "keep_in_days": 10,
+      "max_backups": 4,
       "type": "s3",
-      "target": "asd"
+      "target": "my_minio_alias/my_bucket",
+      "s3_newer_than": "168h",
+      "s3_download_limit": "500Mi",
+      "ntfy_topic": "backups"
     },
     {
       "name": "finance_database",
       "encrypt": true,
       "interval_days": 7,
-      "keep_in_days": 10,
+      "max_backups": 4,
       "type": "postgres",
-      "target": "postgres://read_only_access:pwd@host:5432/finance_db"
+      "target": "postgres://read_only_access:pwd@host:5432/finance_db",
+      "ntfy_topic": "backups"
     }
   ]
 }

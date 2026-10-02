@@ -17,13 +17,18 @@ export async function deleteOldFiles(config: BackupConfig) {
 }
 
 function getRelatedBackupFiles(backup: BackupJob, paths: string[]) {
-  const relatedBackupFiles = paths.filter(p => p.startsWith(backup.name + '.'));
+  // only prune files this tool created (they must have a date in the name);
+  // undated files never count towards max_backups and are never deleted
+  const relatedBackupFiles = paths.filter(
+    (p) =>
+      p.startsWith(backup.name + ".") && extractDateFromFileName(p) !== null,
+  );
   if (relatedBackupFiles.length === 0) {
     return [];
   } else {
     relatedBackupFiles.sort((a, b) => {
-      const dateA = extractDateFromFileName(a) || new Date();
-      const dateB = extractDateFromFileName(b) || new Date();
+      const dateA = extractDateFromFileName(a)!;
+      const dateB = extractDateFromFileName(b)!;
       return dateA.getTime() < dateB.getTime() ? 1 : -1;
     });
 

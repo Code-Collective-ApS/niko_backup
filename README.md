@@ -16,6 +16,12 @@ Now you can run the program using `node`:
 node build/main.js
 ```
 
+### Environment variables
+
+- `NTFY_TOKEN` - token for the ntfy instance used for success notifications (required for notifications)
+- `NTFY_BASE_URL` - base url of the ntfy instance, e.g. `https://ntfy.example.com`
+- `SENTRY_DSN` - DSN of a Sentry-compatible server (e.g. [Bugsink](https://bugsink.com)). All backup errors are reported here, so a missing or malformed DSN means errors are only visible in the logs. Format: `https://<publicKey>@<host>/<projectId>`
+
 ### Decrypt openssl password encryption:
 
 s3 backups:

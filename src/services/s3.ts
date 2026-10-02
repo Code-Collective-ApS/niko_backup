@@ -1,4 +1,5 @@
 import type { BackupJob } from "../config";
+import { config } from "../config";
 import { getFileNameFriendlyDate } from "../helpers";
 import { execSync, spawnSync } from "child_process";
 import { resetBackupTimer } from "./state";
@@ -40,27 +41,38 @@ export async function backupS3(job: BackupJob, stateFilePath: string) {
     console.log(`Downloading ${filesCount} files from s3..`);
   }
 
+  const outputDir = config().output_dir;
   const time = getFileNameFriendlyDate(new Date());
   const dirName = `${job.name}.${time}`;
   const tmpDir = `tmp/${dirName}`;
-  const resultPath = `output/${dirName}.tar.gz` + (job.encrypt ? ".enc" : "");
+  const resultPath =
+    `${outputDir}/${dirName}.tar.gz` + (job.encrypt ? ".enc" : "");
 
-  const mkdirOutputCmd = "mkdir -p output";
+  const mkdirOutputCmd = `mkdir -p ${outputDir}`;
   const mkdirTmpCmd = `mkdir -p ${tmpDir}`;
   const mirrorCmd = `mc mirror --limit-download ${limitDownload} --newer-than ${newerThan} ${job.target} ${tmpDir}`;
   const tarCmd = `tar -cvf ${resultPath} ${tmpDir}`;
-  const tarCmdEncrypt = `tar -cvf - ${tmpDir} | openssl enc -e -aes256 -pass pass:${job.encrypt_pass} -out ${resultPath}`;
+  // the encryption password is passed via environment variable so that it
+  // does not show up in the process list
+  const tarCmdEncrypt = `set -o pipefail; tar -cvf - ${tmpDir} | openssl enc -e -aes256 -pass env:NIKO_ENCRYPT_PASS -out ${resultPath}`;
   const cleanupCmd = "rm -r tmp";
 
-  execSync(mkdirTmpCmd, { stdio: "ignore" });
-  execSync(mkdirOutputCmd, { stdio: "ignore" });
-  execSync(mirrorCmd, { stdio: "ignore" });
-  execSync(job.encrypt ? tarCmdEncrypt : tarCmd, { stdio: "ignore" });
-  execSync(cleanupCmd, { stdio: "ignore" });
+  try {
+    execSync(mkdirTmpCmd, { stdio: "ignore" });
+    execSync(mkdirOutputCmd, { stdio: "ignore" });
+    execSync(mirrorCmd, { stdio: "ignore" });
+    // pipefail requires bash (dash does not support it)
+    execSync(job.encrypt ? tarCmdEncrypt : tarCmd, {
+      stdio: "ignore",
+      shell: "/bin/bash",
+      env: { ...process.env, NIKO_ENCRYPT_PASS: job.encrypt_pass || "" },
+    });
+  } finally {
+    // clean up the temp dir no matter if the backup went well or not
+    execSync(cleanupCmd, { stdio: "ignore" });
+  }
 
-  await resetBackupTimer(job, stateFilePath);
-
-  // backup postgres to second location if enabled
+  // backup to second location if enabled
   if (!job.disable_second_location) {
     await backupFileToSecondLocation(job, resultPath);
   }
@@ -76,4 +88,8 @@ export async function backupS3(job: BackupJob, stateFilePath: string) {
       "Not sending notification due to missing option `ntfy_topic` in niko backup config",
     );
   }
+
+  // only reset the backup timer on success, so that a failed backup is
+  // retried on the next run
+  await resetBackupTimer(job, stateFilePath);
 }

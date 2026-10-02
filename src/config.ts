@@ -95,6 +95,10 @@ export function envConfig(): EnvConfig {
     ntfy_token: process.env.NTFY_TOKEN,
     ntfy_base_url: process.env.NTFY_BASE_URL,
   });
-  console.log("found these ntfy tokens/urls", parsedEnvConfig);
+  // never log the tokens themselves
+  console.log("environment config:", {
+    ntfy_base_url: parsedEnvConfig.ntfy_base_url || "(unset)",
+    has_ntfy_token: !!parsedEnvConfig.ntfy_token,
+  });
   return parsedEnvConfig;
 }

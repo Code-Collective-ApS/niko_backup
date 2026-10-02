@@ -1,5 +1,8 @@
-import { envConfig, type BackupJob } from "../config";
+import { envConfig } from "../config";
 import { prettyByteSize } from "../helpers";
+import { reportError } from "./errors";
+
+const tenSeconds = 10000;
 
 async function _sendNotification(
   topic: string,
@@ -59,10 +62,11 @@ async function _sendNotification(
       method: "POST", // PUT works too
       body: body,
       headers: headers,
+      signal: AbortSignal.timeout(tenSeconds),
     });
 
     // retreive json
-    const json: any = await res.json();
+    const json: any = await res.json().catch(() => ({}));
 
     if (res.status !== 200) {
       const error = json?.error || "Unknown error";
@@ -75,29 +79,11 @@ async function _sendNotification(
     }
     console.info("notification sent successfully");
 
-    // TODO: validate response and returned typed object
     return json;
   } catch (e) {
     console.error("Error: Unable to send notification!");
-    console.log(e);
-    // TODO: report error !!!!!!!!! this is important
+    await reportError(e, { stage: "notification", topic });
   }
-}
-
-export async function sendBackupErrNoti(
-  channel: string,
-  jobName: string,
-  errMsg: string,
-) {
-  const { ntfy_base_url, ntfy_token } = envConfig();
-  return _sendNotification(
-    channel,
-    ntfy_token,
-    `'${jobName}' bckp err`,
-    errMsg,
-    4,
-    ntfy_base_url,
-  );
 }
 
 // TODO: add backup stats to notification
@@ -115,15 +101,4 @@ export async function sendSuccessNoti(
     3,
     ntfy_base_url,
   );
-}
-
-export async function parseAndNotify(
-  job: BackupJob,
-  errorChannel: string,
-  e: Error | any,
-) {
-  const fullMsg = e?.message.trim() || "Unknown error";
-  const psqlErr: string | undefined = fullMsg.split("\n")?.[1];
-  const errToReport = psqlErr || fullMsg;
-  return sendBackupErrNoti(errorChannel, job.name, errToReport);
 }
