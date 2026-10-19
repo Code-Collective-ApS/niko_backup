@@ -16,7 +16,7 @@ const backupSchema = yup.object({
     .min(0, "'max_backups' cannot be negative"),
   type: yup
     .string()
-    .oneOf(["postgres", "s3"] as const)
+    .oneOf(["postgres", "s3", "directory"] as const)
     .required(),
   pg_dump: yup.string().optional(),
   psql: yup.string().optional(),
@@ -28,6 +28,9 @@ const backupSchema = yup.object({
   disable_second_location: yup.boolean().optional(),
   s3_newer_than: yup.string().optional(),
   s3_download_limit: yup.string().optional(),
+  paths: yup.array(yup.string()).optional(),
+  ssh_key: yup.string().optional(),
+  pre_command: yup.string().optional(),
 });
 
 const envConfigSchema = yup.object({
@@ -75,6 +78,13 @@ export function validateBackupConfig(parsed: BackupJob): void {
       throw new Error(
         "'s3_newer_than' or 's3_limit_download' was not defined in config",
       );
+    }
+  } else if (parsed.type === "directory") {
+    if (!parsed.paths || parsed.paths.length === 0) {
+      throw new Error("'paths' must be a non-empty array for directory backups");
+    }
+    if (parsed.paths.some((p) => !p || !p.startsWith("/"))) {
+      throw new Error("directory backup 'paths' must be absolute paths");
     }
   }
 

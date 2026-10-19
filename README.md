@@ -32,6 +32,7 @@ Copy `.env.example` to `.env` and fill in the values (or set them in your system
 - `bash` at `/bin/bash` (the dump pipelines use `pipefail`, which `dash` does not support)
 - PostgreSQL client tools (`pg_dump`, `psql`) - paths can be overridden per job in the config
 - MinIO client (`mc`) for `s3` backups
+- `rsync` and the `ssh` client for `directory` backups
 - `rclone` for the second location backup
 - `openssl` for encrypted backups
 
@@ -51,8 +52,8 @@ Per-job options:
 | Option                    | Description                                                                    |
 | ------------------------- | ------------------------------------------------------------------------------ |
 | `name`                    | Unique job name, used as prefix for the backup file names                      |
-| `type`                    | `postgres` or `s3`                                                             |
-| `target`                  | Postgres connection URI (`postgres://user:pass@host/db`) or MinIO alias/bucket |
+| `type`                    | `postgres`, `s3` or `directory`                                                |
+| `target`                  | Postgres connection URI (`postgres://user:pass@host/db`), MinIO alias/bucket or SSH target (`user@host` for `directory`) |
 | `interval_days`           | Days between runs of this job                                                  |
 | `max_backups`             | Number of backup files to keep in `output_dir` (oldest are pruned)             |
 | `encrypt`                 | Encrypt the backup with `openssl` (aes256)                                     |
@@ -61,6 +62,9 @@ Per-job options:
 | `disable_second_location` | Skip copying this backup to the second location (optional)                     |
 | `s3_newer_than`           | Only mirror files newer than this, e.g. `168h` (required for `s3`)             |
 | `s3_download_limit`       | Download limit passed to `mc mirror`, e.g. `500Mi` (required for `s3`)         |
+| `paths`                   | Absolute remote paths to copy, directories or files (required for `directory`) |
+| `ssh_key`                 | Private key for the SSH connection (optional, `directory` only)                |
+| `pre_command`             | Command run on the remote host over SSH before rsync (optional, `directory` only) |
 | `force_run`               | Run the job regardless of interval (optional)                                  |
 
 ### Behavior notes
@@ -68,6 +72,7 @@ Per-job options:
 - A failed backup job is retried on the next run: the state file is only updated on success.
 - If any job fails, the process exits with a non-zero exit code, so a systemd unit will show as failed.
 - Errors are reported to the `SENTRY_DSN` endpoint. ntfy receives a single summary notification per run (a markdown table with each job's result, size, execution time and next run), sent to the top-level `ntfy_topic`. If every job was skipped, no notification is sent.
+- `directory` jobs pull each `paths` entry into a staging dir via `rsync` and archive it like any other job. If the remote state includes a live SQLite database, use `pre_command` to take a consistent snapshot first, e.g. `sqlite3 /path/database.sqlite '.backup /path/database.sqlite.bak'` — rsyncing a database file mid-write can capture a torn state. SSH host keys are accepted on first connection (`StrictHostKeyChecking=accept-new`); a changed fingerprint on a known host fails the job.
 
 ### Decrypt openssl password encryption:
 

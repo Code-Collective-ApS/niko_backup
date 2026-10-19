@@ -34,6 +34,18 @@
       "max_backups": 4,
       "type": "postgres",
       "target": "postgres://read_only_access:pwd@host:5432/finance_db"
+    },
+    {
+      "name": "edge_proxy_npm",
+      "encrypt": true,
+      "encrypt_pass": "CHANGE-ME-openssl-passphrase",
+      "interval_days": 1,
+      "max_backups": 14,
+      "type": "directory",
+      "target": "npm-backup@10.4.0.10",
+      "paths": ["/opt/npm/data", "/opt/npm/letsencrypt", "/tmp/npm-database.sqlite.bak"],
+      "ssh_key": "/home/niko-backup/.ssh/id_npm_pull",
+      "pre_command": "sqlite3 /opt/npm/data/database.sqlite '.backup /tmp/npm-database.sqlite.bak'"
     }
   ]
 }

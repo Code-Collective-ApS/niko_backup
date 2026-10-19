@@ -4,6 +4,7 @@ import { reportError } from "./services/errors";
 import { sendRunSummary, type SummaryRow } from "./services/notifier";
 import { backupPostgres } from "./services/postgres";
 import { backupS3 } from "./services/s3";
+import { backupDirectory } from "./services/directory";
 import { getLastSuccessDate, isTimeForBackup } from "./services/state";
 import type { JobResult } from "./types";
 
@@ -45,6 +46,8 @@ async function run() {
         result = await backupPostgres(backup, cfg.state_file_path);
       } else if (backup.type === "s3") {
         result = await backupS3(backup, cfg.state_file_path);
+      } else if (backup.type === "directory") {
+        result = await backupDirectory(backup, cfg.state_file_path);
       } else {
         throw new Error(
           `Backup with type '${backup.type}' was not recognized!`,
